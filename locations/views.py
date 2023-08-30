@@ -32,6 +32,7 @@ def locations(request):
 @api_view(['GET', 'PUT', 'DELETE'])
 @csrf_exempt
 def location_detail(request, pk):
+    print("Received a DELETE request for location:", pk)  # Debugging line
     try:
         location = Location.objects.get(pk=pk)
     except Location.DoesNotExist:
@@ -54,5 +55,6 @@ def location_detail(request, pk):
         return JsonResponse(serializer.errors, status=400)
 
     elif (request.method == 'DELETE'):
+        print("Deleting location:", location)
         location.delete()
         return HttpResponse(status=204)
