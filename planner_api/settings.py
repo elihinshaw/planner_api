@@ -30,9 +30,25 @@ SECRET_KEY = 'django-insecure-7__cdo9gsrj&%-2pojo4(m0=bdn=-+qticgil3ghyfay$49i*k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '192.168.1.10']
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False  # Set to False to specify allowed origins
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:1234",  # Add the origin that needs access
+]
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+
+SESSION_COOKIE_NAME = 'session_id'
+
+CSRF_COOKIE_NAME = 'csrftoken'
+
+SESSION_COOKIE_SECURE = True
+
+CSRF_COOKIE_SECURE = True
+
+CSRF_TRUSTED_ORIGINS = ['http://localhost:1234']
+CSRF_TRUSTED_ORIGINS = ['http://*.localhost:1234/','http://*.192.168.1.10:1234/']
 
 # Application definition
 
@@ -49,11 +65,10 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
@@ -99,6 +114,7 @@ DATABASES = {
         },
     }
 }
+
 
 
 # Password validation

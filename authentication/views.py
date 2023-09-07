@@ -2,15 +2,17 @@ import json
 from django.http import JsonResponse
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import login, logout
-from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.contrib.sessions.models import Session
 
 # Helper function to create profile data dictionary
+
+@csrf_exempt
 def create_profile_data(user):
-    # Create a dictionary with user data
     profile_data = {
-        'username': user.username,
-        'email': user.email,
+        "username": user.username,
+        "email": user.email,
     }
     return profile_data
 
@@ -19,7 +21,10 @@ def profile_api(request):
     if request.method == 'GET':
         if request.user.is_authenticated:
             # Get profile data for the authenticated user
-            profile_data = create_profile_data(request.user)
+            profile_data = {
+                "username": request.user.username,
+                "email": request.user.email,
+            }
             return JsonResponse(profile_data)
         else:
             # Return an error if the user is not authenticated
@@ -39,9 +44,8 @@ def register(request):
             form = UserCreationForm(json_data)
 
             if form.is_valid():
-                # Register the user and log them in
+                # Register the user
                 user = form.save()
-                login(request, user)
 
                 # Get and return profile data for the registered user
                 profile_data = create_profile_data(user)
@@ -59,27 +63,23 @@ def register(request):
 
 @csrf_exempt
 def login_view(request):
+    print(request.POST)
     if request.method == 'POST':
-        # Create an authentication form with POST data
         form = AuthenticationForm(data=request.POST)
-
         if form.is_valid():
-            # If credentials are valid, log in the user
             user = form.get_user()
             login(request, user)
-
-            # Get and return profile data for the logged-in user
-            profile_data = create_profile_data(user)
-            return JsonResponse(profile_data)
+            # Get the session key from the user's session
+            session_key = request.session.session_key
+            # Return the session key in the response JSON
+            return JsonResponse({'session_key': session_key})
         else:
-            # Return an error for invalid credentials
             return JsonResponse({'error': 'Invalid credentials'}, status=401)
     else:
-        # Return an error for invalid HTTP methods
         return JsonResponse({'error': 'Invalid method'}, status=405)
 
-@login_required
 @csrf_exempt
+@login_required
 def delete_user(request):
     if request.method == 'DELETE':
         # Get the currently authenticated user
@@ -94,7 +94,17 @@ def delete_user(request):
         # Return an error for invalid HTTP methods
         return JsonResponse({'error': 'Invalid method'}, status=405)
 
+
+@csrf_exempt
 def logout_view(request):
-    # Log the user out and return a success message
+    # Get the session key from the client-side (assuming it's being passed as a query parameter)
+    session_key = request.GET.get('session_key')
+
+    # Delete the session from the database
+    Session.objects.filter(session_key=session_key).delete()
+
+    # Log the user out using Django's logout method
     logout(request)
+
+    print("Server successfully logged out.")
     return JsonResponse({'message': 'Logged out successfully'})
