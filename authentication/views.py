@@ -1,110 +1,118 @@
-import json
+import jwt
+import bcrypt
+from .models import CustomUser
 from django.http import JsonResponse
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
-from django.contrib.auth import login, logout
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from django.contrib.sessions.models import Session
+from django.views.generic import View
+from datetime import datetime, timedelta
+from planner_api.settings import SECRET_KEY
+from functools import wraps
 
-# Helper function to create profile data dictionary
+def is_authenticated(view_func):
+    @wraps(view_func)
+    def _wrapped_view(self, *args, **kwargs):
+        data = {}
+        token = self.request.META.get('HTTP_AUTHORIZATION')
 
-@csrf_exempt
-def create_profile_data(user):
-    profile_data = {
-        "username": user.username,
-        "email": user.email,
-    }
-    return profile_data
+        if not token:
+            data['success'] = False
+            data['message'] = 'Token is missing.'
+            return JsonResponse(data, status=401)
 
-@csrf_exempt
-def profile_api(request):
-    if request.method == 'GET':
-        if request.user.is_authenticated:
-            # Get profile data for the authenticated user
-            profile_data = {
-                "username": request.user.username,
-                "email": request.user.email,
-            }
-            return JsonResponse(profile_data)
-        else:
-            # Return an error if the user is not authenticated
-            return JsonResponse({'error': 'User not authenticated'}, status=401)
-    else:
-        # Return an error for invalid HTTP methods
-        return JsonResponse({'error': 'Invalid method'}, status=405)
-
-@csrf_exempt
-def register(request):
-    if request.method == 'POST':
         try:
-            # Parse JSON data from the request body
-            json_data = json.loads(request.body.decode('utf-8'))
+            payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=['HS256'])
+            user_id = payload['user_id']
+            self.request.user_id = user_id
+        except jwt.ExpiredSignatureError:
+            data['success'] = False
+            data['message'] = 'Token has expired.'
+            return JsonResponse(data, status=401)
+        except jwt.DecodeError:
+            data['success'] = False
+            data['message'] = 'Token is invalid.'
+            return JsonResponse(data, status=401)
+        except Exception as e:
+            data['success'] = False
+            data['message'] = str(e)
+            return JsonResponse(data, status=401)
 
-            # Create a user registration form with the parsed data
-            form = UserCreationForm(json_data)
+        return view_func(self, *args, **kwargs)
 
-            if form.is_valid():
-                # Register the user
-                user = form.save()
+    return _wrapped_view
 
-                # Get and return profile data for the registered user
-                profile_data = create_profile_data(user)
-                return JsonResponse(profile_data)
-            else:
-                # Return an error with form validation errors
-                errors = form.errors
-                return JsonResponse({'error': 'Invalid form data', 'errors': errors}, status=400)
-        except json.JSONDecodeError as e:
-            # Return an error for invalid JSON data
-            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
-    else:
-        # Return an error for invalid HTTP methods
-        return JsonResponse({'error': 'Invalid method'}, status=405)
+class SayHello(View):
+    @is_authenticated
+    def get(self, *args, **kwargs):
+        data = {
+            'success': True,
+            'message': 'Hello',
+            'user_id': self.request.user_id,
+        }
+        return JsonResponse(data)
 
-@csrf_exempt
-def login_view(request):
-    print(request.POST)
-    if request.method == 'POST':
-        form = AuthenticationForm(data=request.POST)
-        if form.is_valid():
-            user = form.get_user()
-            login(request, user)
-            # Get the session key from the user's session
-            session_key = request.session.session_key
-            # Return the session key in the response JSON
-            return JsonResponse({'session_key': session_key})
+
+class CreateToken(View):
+
+
+    def post(self, request):
+        data = {}
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        if not username or not password:
+            data['success'] = False
+            data['message'] = 'username and password are required.'
         else:
-            return JsonResponse({'error': 'Invalid credentials'}, status=401)
-    else:
-        return JsonResponse({'error': 'Invalid method'}, status=405)
+            try:
+                user = CustomUser.objects.get(username=username)
+                if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
+                    expiration_time = datetime.now() + timedelta(hours=24)
+                    exp_timestamp = int(expiration_time.timestamp())
+                    payload = {
+                        'user_id': user.id,
+                        'exp': exp_timestamp,
+                    }
 
-@csrf_exempt
-@login_required
-def delete_user(request):
-    if request.method == 'DELETE':
-        # Get the currently authenticated user
-        user_to_delete = request.user
+                    token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
-        # Delete the user
-        user_to_delete.delete()
+                    data['jwt'] = token
+                    data['username'] = username
+                    data['user_id'] = user.id
 
-        # Return a success message after deleting the user
-        return JsonResponse({'message': 'User deleted successfully'})
-    else:
-        # Return an error for invalid HTTP methods
-        return JsonResponse({'error': 'Invalid method'}, status=405)
+                    data['success'] = True
+                    data['message'] = 'Token created successfully.'
+                else:
+                    data['success'] = False
+                    data['message'] = 'Invalid credentials.'
+            except CustomUser.DoesNotExist:
+                data['success'] = False
+                data['message'] = 'User not found.'
+
+        return JsonResponse(data)
 
 
-@csrf_exempt
-def logout_view(request):
-    # Get the session key from the client-side (assuming it's being passed as a query parameter)
-    session_key = request.GET.get('session_key')
+class SignUp(View):
+    def post(self, request):
+        data = {}
+        username = request.POST.get('username')
+        password = request.POST.get('password')
 
-    # Delete the session from the database
-    Session.objects.filter(session_key=session_key).delete()
+        if not username or not password:
+            data['success'] = False
+            data['message'] = 'Username and password are required.'
+        else:
+            try:
+                CustomUser.objects.get(username=username)
+                data['success'] = False
+                data['message'] = 'Username already exists.'
+            except CustomUser.DoesNotExist:
+                if len(password) < 5:
+                    data['success'] = False
+                    data['message'] = 'Password must be at least 5 characters long.'
+                else:
+                    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+                    new_user = CustomUser(username=username, password=hashed_password.decode('utf-8'))
+                    new_user.save()
+                    data['success'] = True
+                    data['message'] = 'User registered successfully.'
 
-    # Log the user out using Django's logout method
-    logout(request)
-
-    print("Server successfully logged out.")
-    return JsonResponse({'message': 'Logged out successfully'})
+        return JsonResponse(data)
