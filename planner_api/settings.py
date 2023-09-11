@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     'locations',
     'rest_framework',
     'corsheaders',
-    'authentication'
+    'authentication',
 ]
 
 MIDDLEWARE = [
