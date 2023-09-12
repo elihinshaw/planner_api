@@ -25,7 +25,7 @@ INSTALLED_APPS = [
     'locations',
     'rest_framework',
     'corsheaders',
-    'authentication'
+    'authentication',
 ]
 
 MIDDLEWARE = [
@@ -34,6 +34,10 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     # 'django.middleware.csrf.CsrfViewMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:1234",
 ]
 
 ROOT_URLCONF = 'planner_api.urls'
@@ -62,12 +66,20 @@ WSGI_APPLICATION = 'planner_api.wsgi.application'
 
 DATABASES = {
     "default": {
-        "ENGINE": os.environ.get("DB_ENGINE"),
+        'ENGINE': os.environ.get("DB_ENGINE"),
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASSWORD"),
         "HOST": os.environ.get("DB_HOST"),
         "PORT": os.environ.get("DB_PORT"),
+
+        'Trusted_Connection': 'no',
+        'OPTIONS': {
+            'driver': 'ODBC Driver 18 for SQL Server',
+            'MARS_Connection': 'True',
+            'Encrypt': 'yes',
+            'TrustServerCertificate': 'no',
+        },
     }
 }
 

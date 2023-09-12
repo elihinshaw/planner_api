@@ -14,8 +14,7 @@ def is_authenticated(view_func):
         token = self.request.META.get('HTTP_AUTHORIZATION')
 
         if not token:
-            data['success'] = False
-            data['message'] = 'Token is missing.'
+            data['message'] = 'JWT token is missing.'
             return JsonResponse(data, status=401)
 
         try:
@@ -23,15 +22,12 @@ def is_authenticated(view_func):
             user_id = payload['user_id']
             self.request.user_id = user_id
         except jwt.ExpiredSignatureError:
-            data['success'] = False
-            data['message'] = 'Token has expired.'
+            data['message'] = 'JWT token has expired.'
             return JsonResponse(data, status=401)
         except jwt.DecodeError:
-            data['success'] = False
-            data['message'] = 'Token is invalid.'
+            data['message'] = 'JWT token is invalid.'
             return JsonResponse(data, status=401)
         except Exception as e:
-            data['success'] = False
             data['message'] = str(e)
             return JsonResponse(data, status=401)
 
@@ -43,7 +39,6 @@ class SayHello(View):
     @is_authenticated
     def get(self, *args, **kwargs):
         data = {
-            'success': True,
             'message': 'Hello',
             'user_id': self.request.user_id,
         }
@@ -59,7 +54,6 @@ class CreateToken(View):
         password = request.POST.get('password')
 
         if not username or not password:
-            data['success'] = False
             data['message'] = 'username and password are required.'
         else:
             try:
@@ -75,16 +69,13 @@ class CreateToken(View):
                     token = jwt.encode(payload, SECRET_KEY, algorithm='HS256')
 
                     data['jwt'] = token
-                    data['username'] = username
+                    data['username'] = user.username
                     data['user_id'] = user.id
 
-                    data['success'] = True
-                    data['message'] = 'Token created successfully.'
+                    data['message'] = 'JWT token created successfully.'
                 else:
-                    data['success'] = False
-                    data['message'] = 'Invalid credentials.'
+                    data['message'] = 'Invalid credentials, unable to create token.'
             except CustomUser.DoesNotExist:
-                data['success'] = False
                 data['message'] = 'User not found.'
 
         return JsonResponse(data)
@@ -97,22 +88,18 @@ class SignUp(View):
         password = request.POST.get('password')
 
         if not username or not password:
-            data['success'] = False
             data['message'] = 'Username and password are required.'
         else:
             try:
                 CustomUser.objects.get(username=username)
-                data['success'] = False
                 data['message'] = 'Username already exists.'
             except CustomUser.DoesNotExist:
                 if len(password) < 5:
-                    data['success'] = False
                     data['message'] = 'Password must be at least 5 characters long.'
                 else:
                     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
                     new_user = CustomUser(username=username, password=hashed_password.decode('utf-8'))
                     new_user.save()
-                    data['success'] = True
                     data['message'] = 'User registered successfully.'
 
         return JsonResponse(data)
