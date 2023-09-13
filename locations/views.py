@@ -2,6 +2,9 @@ from django.http import JsonResponse
 import requests
 import time
 import os
+from authentication.views import is_authenticated
+
+
 
 def geocode(address):
     try:
@@ -34,6 +37,7 @@ def geocode(address):
     except requests.exceptions.RequestException as e:
         return {"error": f"Geocoding request failed: {str(e)}"}
 
+
 def geocode_2(address):
     try:
         if not address:
@@ -42,9 +46,9 @@ def geocode_2(address):
         url = "https://us1.locationiq.com/v1/search"
 
         data = {
-        'key': os.environ.get("LOCATION_IQ_KEY"),
-        'q': address,
-        'format': 'json'
+            'key': os.environ.get("LOCATION_IQ_KEY"),
+            'q': address,
+            'format': 'json'
         }
 
         response = requests.get(url, params=data)
@@ -71,7 +75,8 @@ def geocode_2(address):
     except requests.exceptions.RequestException as e:
         return {"error": f"Geocoding request failed: {str(e)}"}
 
-def places_data(lat_lon_data):
+
+def places_data(lat_lon_data, types):
     lat = lat_lon_data.get("lat")
     lon = lat_lon_data.get("lon")
 
@@ -79,7 +84,8 @@ def places_data(lat_lon_data):
 
     querystring = {
         "location": f"{lat},{lon}",
-        "radius": "180",
+        "type": [types],
+        "radius": "1000",
         "language": "en"
     }
 
@@ -103,9 +109,17 @@ def places_data(lat_lon_data):
     except requests.exceptions.RequestException as e:
         return JsonResponse({"error": f"Places request failed: {str(e)}"}, status=500)
 
+@is_authenticated
 def get_places(request):
     try:
         address = request.GET.get("address")
+        type_param = request.GET.get("type")
+
+        if type_param is not None and "error" in type_param:
+            type_param = None
+        else:
+            types = type_param.split(",") if type_param else []
+
         geocode_result = geocode(address)
 
         if "error" in geocode_result:
@@ -116,7 +130,7 @@ def get_places(request):
 
         lat_lon_data = {"lat": lat, "lon": lon}
 
-        places_response = places_data(lat_lon_data)
+        places_response = places_data(lat_lon_data, types)
         places_json = places_response.content.decode('utf-8')
 
         if places_json == '{"results": []}':
@@ -132,11 +146,10 @@ def get_places(request):
 
             lat_lon_data = {"lat": lat, "lon": lon}
 
-            places_response = places_data(lat_lon_data)
+            places_response = places_data(lat_lon_data, types)
 
         return places_response
 
     except Exception as e:
         return JsonResponse({"error": f"Internal server error: {str(e)}"}, status=500)
-
 
