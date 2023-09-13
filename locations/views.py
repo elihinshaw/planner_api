@@ -109,6 +109,7 @@ def places_data(lat_lon_data, types):
     except requests.exceptions.RequestException as e:
         return JsonResponse({"error": f"Places request failed: {str(e)}"}, status=500)
 
+
 @is_authenticated
 def get_places(request):
     try:
