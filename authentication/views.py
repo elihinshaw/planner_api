@@ -9,9 +9,9 @@ from functools import wraps
 
 def is_authenticated(view_func):
     @wraps(view_func)
-    def _wrapped_view(self, *args, **kwargs):
+    def _wrapped_view(request, *args, **kwargs):
         data = {}
-        token = self.request.META.get('HTTP_AUTHORIZATION')
+        token = request.META.get('HTTP_AUTHORIZATION')
 
         if not token:
             data['message'] = 'JWT token is missing.'
@@ -20,7 +20,7 @@ def is_authenticated(view_func):
         try:
             payload = jwt.decode(token.split(" ")[1], SECRET_KEY, algorithms=['HS256'])
             user_id = payload['user_id']
-            self.request.user_id = user_id
+            request.user_id = user_id
         except jwt.ExpiredSignatureError:
             data['message'] = 'JWT token has expired.'
             return JsonResponse(data, status=401)
@@ -31,7 +31,7 @@ def is_authenticated(view_func):
             data['message'] = str(e)
             return JsonResponse(data, status=401)
 
-        return view_func(self, *args, **kwargs)
+        return view_func(request, *args, **kwargs)
 
     return _wrapped_view
 
