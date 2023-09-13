@@ -103,26 +103,6 @@ def places_data(lat_lon_data):
     except requests.exceptions.RequestException as e:
         return JsonResponse({"error": f"Places request failed: {str(e)}"}, status=500)
 
-
-def get_places(request):
-    try:
-        address = request.GET.get("address")
-        geocode_result = geocode(address)
-
-        if "error" in geocode_result:
-            return JsonResponse(geocode_result, status=400)
-
-        lat = geocode_result.get("lat")
-        lon = geocode_result.get("lon")
-
-        lat_lon_data = {"lat": lat, "lon": lon}
-
-        places_result = places_data(lat_lon_data)
-
-        return places_result
-    except Exception as e:
-        return JsonResponse({"error": f"Internal server error: {str(e)}"}, status=500)
-
 def get_places(request):
     try:
         address = request.GET.get("address")
