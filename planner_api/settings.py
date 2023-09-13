@@ -22,7 +22,6 @@ DEBUG = True
 # Application definition
 
 INSTALLED_APPS = [
-    'locations',
     'rest_framework',
     'corsheaders',
     'authentication',
