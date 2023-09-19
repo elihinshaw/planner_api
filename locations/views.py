@@ -90,7 +90,7 @@ def places_data(lat_lon_data, types):
     }
 
     headers = {
-        "X-RapidAPI-Key": os.environ.get("TRUEWAY_PLACES_KEY"),
+        "X-RapidAPI-Key": os.environ.get("TRUEWAY_API_KEY"),
         "X-RapidAPI-Host": "trueway-places.p.rapidapi.com",
     }
 
@@ -108,6 +108,36 @@ def places_data(lat_lon_data, types):
 
     except requests.exceptions.RequestException as e:
         return JsonResponse({"error": f"Places request failed: {str(e)}"}, status=500)
+
+def distance_data(origin, destination):
+
+    url = 'https://trueway-directions2.p.rapidapi.com/FindDrivingPath'
+
+    querystring = {"origin":origin,"destination":destination}
+
+    headers = {
+	"X-RapidAPI-Key": os.environ.get("TRUEWAY_API_KEY"),
+	"X-RapidAPI-Host": "trueway-directions2.p.rapidapi.com"
+}
+    response = requests.get(url, headers=headers, params=querystring)
+    data = response.json()
+
+    if 'route' in data:
+        route_data = data['route']
+        duration_seconds = int(route_data.get('duration', 0))
+
+        duration_minutes = duration_seconds // 60
+        remaining_seconds = duration_seconds % 60
+
+        duration_formatted = f"Estimated {duration_minutes} minutes and {remaining_seconds} seconds"
+
+        result = {
+            'distance': f"Estimated {round(route_data.get('distance', 0) * 0.000621371, 1)} miles",
+            'duration': duration_formatted
+        }
+        return JsonResponse(result)
+    else:
+        return JsonResponse({"error": "Failed to retrieve route data"}, status=500)
 
 
 @is_authenticated
@@ -154,3 +184,21 @@ def get_places(request):
     except Exception as e:
         return JsonResponse({"error": f"Internal server error: {str(e)}"}, status=500)
 
+@is_authenticated
+def get_direction_data(request):
+    try:
+        origin = request.GET.get("origin")
+        destination = request.GET.get("destination")
+
+        origin_coords = geocode(origin)
+        destination_coords = geocode(destination)
+
+        dest_lat_lon = {f"{destination_coords.get('lat')}, {destination_coords.get('lon')}" }
+        origin_lat_lon = {f"{origin_coords.get('lat')}, {origin_coords.get('lon')}" }
+
+        directions_response = distance_data(origin_lat_lon, dest_lat_lon)
+
+        return directions_response
+
+    except Exception as e:
+        return JsonResponse({"error": f"Internal server error: {str(e)}"}, status=500)
