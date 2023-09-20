@@ -89,17 +89,20 @@ class SignUp(View):
 
         if not username or not password:
             data['message'] = 'Username and password are required.'
+            return JsonResponse(data, status=400)
         else:
             try:
                 CustomUser.objects.get(username=username)
                 data['message'] = 'Username already exists.'
+                return JsonResponse(data, status=409)
             except CustomUser.DoesNotExist:
                 if len(password) < 5:
                     data['message'] = 'Password must be at least 5 characters long.'
+                    return JsonResponse(data, status=401)
                 else:
                     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
                     new_user = CustomUser(username=username, password=hashed_password.decode('utf-8'))
                     new_user.save()
                     data['message'] = 'User registered successfully.'
 
-        return JsonResponse(data)
+        return JsonResponse(data, status=201)
