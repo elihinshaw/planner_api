@@ -74,7 +74,7 @@ class CreateToken(View):
                 # Compare the provided password and stored password (both hashed and encoded) to check if they match
                 if bcrypt.checkpw(password.encode('utf-8'), user.password.encode('utf-8')):
                     # Generate expiration time for the JWT token
-                    expiration_time = datetime.now() + timedelta(hours=24)
+                    expiration_time = datetime.now() + timedelta(days=1)
                     exp_timestamp = int(expiration_time.timestamp())
 
                     # Create JWT payload using user information and expiration time
@@ -90,6 +90,7 @@ class CreateToken(View):
                     data['jwt'] = token
                     data['username'] = user.username
                     data['user_id'] = user.id
+                    data['exp'] = exp_timestamp
                     data['message'] = 'JWT token created successfully.'
                 else:
                     # Handle case when the login is invalid
