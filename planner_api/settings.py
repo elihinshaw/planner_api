@@ -63,22 +63,32 @@ WSGI_APPLICATION = 'planner_api.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         'ENGINE': os.environ.get("DB_ENGINE"),
+#         "NAME": os.environ.get("DB_NAME"),
+#         "USER": os.environ.get("DB_USER"),
+#         "PASSWORD": os.environ.get("DB_PASSWORD"),
+#         "HOST": os.environ.get("DB_HOST"),
+#         "PORT": os.environ.get("DB_PORT"),
+
+#         'Trusted_Connection': 'no',
+#         'OPTIONS': {
+#             'driver': 'ODBC Driver 18 for SQL Server',
+#             'MARS_Connection': 'True',
+#             'Encrypt': 'yes',
+#             'TrustServerCertificate': 'no',
+#         },
+#     }
+# }
 DATABASES = {
     "default": {
-        'ENGINE': os.environ.get("DB_ENGINE"),
-        "NAME": os.environ.get("DB_NAME"),
-        "USER": os.environ.get("DB_USER"),
-        "PASSWORD": os.environ.get("DB_PASSWORD"),
-        "HOST": os.environ.get("DB_HOST"),
-        "PORT": os.environ.get("DB_PORT"),
-
-        'Trusted_Connection': 'no',
-        'OPTIONS': {
-            'driver': 'ODBC Driver 18 for SQL Server',
-            'MARS_Connection': 'True',
-            'Encrypt': 'yes',
-            'TrustServerCertificate': 'no',
-        },
+       "ENGINE": "django.db.backends.postgresql",
+        "NAME": "planner_db",
+        "USER": "postgres",
+        "PASSWORD": os.environ.get("PSQL_PASSWORD"),
+        "HOST": "127.0.0.1",
+        "PORT": 5432,
     }
 }
 
