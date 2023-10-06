@@ -1,6 +1,6 @@
 import requests
 import os
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from authentication.views import is_authenticated
 
 
@@ -30,3 +30,12 @@ def get_static_map(request):
     else:
         # Handle the case when the API request fails
         return HttpResponse("Failed to fetch the image", status=500)
+    
+
+
+
+def get_mapbox_token(request):
+
+    mapbox_token = { "token": os.environ.get("MAPBOX_ACCESS_TOKEN")}
+    
+    return JsonResponse(data=mapbox_token)
