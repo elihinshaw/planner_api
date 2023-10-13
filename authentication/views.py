@@ -45,7 +45,7 @@ def is_authenticated(view_func):
     return _wrapped_view  # Return the wrapped view
 
 
-def create_token(self, request):  # handle POST to create JWT tokens
+def create_token(request):  # handle POST to create JWT tokens
     data = {}
     # Get username and password from POST request
     username = request.POST.get('username')
@@ -91,7 +91,7 @@ def create_token(self, request):  # handle POST to create JWT tokens
     return JsonResponse(data)
 
 
-def create_user(self, request):
+def create_user(request):
     data = {}
     username = request.POST.get('username')
     password = request.POST.get('password')
