@@ -2,7 +2,8 @@ import os
 import requests
 from django.http import JsonResponse
 from authentication.views import is_authenticated
-from .geocoding import geocode, geocode_2
+from .geocoding import geocode
+
 
 def distance_data(origin, destination):
     url = 'https://trueway-directions2.p.rapidapi.com/FindDrivingPath'
@@ -40,6 +41,7 @@ def distance_data(origin, destination):
         return JsonResponse(result)
     else:
         return JsonResponse({"error": "Failed to retrieve route data"}, status=500)
+
 
 @is_authenticated
 def get_direction_data(request):

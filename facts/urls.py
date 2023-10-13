@@ -3,5 +3,5 @@ from . import views
 
 # Endpoints for facts
 urlpatterns = [
-    path('factoid/', views.factoid, name='factoid'),
+    path('api/factoid/', views.factoid),
 ]

@@ -2,6 +2,7 @@ import os
 import requests
 from django.http import HttpResponse, JsonResponse
 
+
 def get_place_photo(request):
     # Get the photo_reference from the query parameters
     photo_reference = request.GET.get("reference")
