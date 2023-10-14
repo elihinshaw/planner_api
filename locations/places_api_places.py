@@ -3,9 +3,6 @@ import requests
 from django.http import JsonResponse
 from .places_api_geocoded import address_to_coordinates
 
-import os
-import requests
-from django.http import JsonResponse
 
 def search_nearby_places(request):
     address = request.GET.get('address')

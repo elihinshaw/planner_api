@@ -1,12 +1,11 @@
 from django.urls import path
 from locations import views
 
+
 # Endpoints for locations
 urlpatterns = [
-    path('places/', views.get_places),
-    path('routes/data/', views.get_direction_data),
-    path('routes/map/', views.get_static_map),
-    path('photos/', views.get_place_photo),
-    path('places/api/places/', views.search_nearby_places),
-    path('api/get_mapbox_token/', views.get_mapbox_token)
+    path('api/static-map/', views.get_static_map),
+    path('api/photos/', views.get_place_photo),
+    path('api/places/', views.search_nearby_places),
+    path('api/mapbox-token/', views.get_mapbox_token)
 ]

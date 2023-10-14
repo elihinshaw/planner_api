@@ -30,8 +30,6 @@ def get_static_map(request):
     else:
         # Handle the case when the API request fails
         return HttpResponse("Failed to fetch the image", status=500)
-    
-
 
 
 def get_mapbox_token(request):

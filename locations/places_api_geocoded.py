@@ -1,5 +1,5 @@
 import requests
-import os
+
 
 def address_to_coordinates(address, api_key):
     geocoding_endpoint = 'https://maps.googleapis.com/maps/api/geocode/json'
