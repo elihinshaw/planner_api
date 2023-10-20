@@ -54,3 +54,34 @@ def search_nearby_places(request):
         return JsonResponse(response_data)
     else:
         return JsonResponse({'error': 'Geocoding failed for the provided address'}, status=400)
+
+
+def place_details(request):
+    place_id = request.GET.get('place_id')
+    api_key = os.environ.get("PLACES_API_KEY")
+
+    if not api_key:
+        return JsonResponse({'error': 'API key is missing'}, status=400)    
+
+
+    endpoint = 'https://maps.googleapis.com/maps/api/place/details/json'
+    params = {
+        "place_id": place_id,
+        'key': api_key,
+    }
+
+    while True:
+        response = requests.get(endpoint, params=params)
+
+        if response.status_code == 200:
+            data = response.json()
+
+        else:
+            return JsonResponse({'error': 'Error while fetching nearby places'}, status=500)
+
+
+        response_data = {
+            'results': data,
+        }
+
+        return JsonResponse(response_data)
